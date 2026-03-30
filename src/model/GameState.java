@@ -2,7 +2,7 @@ package model;
 
 public enum GameState {
     MAIN_MENU,
-    LEVEL_SELECT,
+    START,
     CONTROLS,
     SETTINGS,
     QUIT_CONFIRM,

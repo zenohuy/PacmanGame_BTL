@@ -39,13 +39,10 @@ public class SoundManager {
         }
     }
 
-    // Phát âm thanh
     public void playSound(String soundName) {
-        if (isMuted) return; // Nếu đang tắt tiếng thì không phát
-
+        if (isMuted) return;
         Clip clip = soundCache.get(soundName);
         if (clip != null) {
-            // Reset lại file âm thanh về đầu trước khi phát
             clip.setFramePosition(0);
             clip.start();
         }
@@ -61,7 +58,6 @@ public class SoundManager {
         }
     }
 
-    // Dừng âm thanh (thường dùng cho nhạc nền)
     public void stopSound(String soundName) {
         Clip clip = soundCache.get(soundName);
         if (clip != null && clip.isRunning()) {
@@ -71,11 +67,9 @@ public class SoundManager {
 
     public boolean isMuted() { return isMuted; }
 
-    // Bật/tắt toàn bộ âm thanh
     public void toggleMute() {
         isMuted = !isMuted;
         if (isMuted) {
-            // Tạm dừng tất cả âm thanh đang chạy nếu bị mute
             for (Clip clip : soundCache.values()) {
                 if (clip.isRunning()) clip.stop();
             }

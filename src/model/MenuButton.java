@@ -24,7 +24,6 @@ public class MenuButton {
         if (image != null) {
             g.drawImage(image, x, y, width, height, null);
         } else {
-            // Nơi vẽ tạm một nút màu xám nếu chưa load được ảnh
             g.setColor(Color.GRAY);
             g.fillRect(x, y, width, height);
             g.setColor(Color.WHITE);

@@ -13,11 +13,13 @@ public class GameModel {
     private boolean isGameOver = false;
     private List<MenuButton> settingsButtons;
 
-    // --- PHẦN QUẢN LÝ MENU ---
+    // Quan ly menu
     private GameState currentState = GameState.MAIN_MENU;
     private List<MenuButton> mainMenuButtons;
     private List<MenuButton> pauseButtons;
     private List<MenuButton> quitConfirmButtons;
+    private List<MenuButton> startButtons;
+    private MenuButton controlsButtons;
 
     public GameModel() {
         this.ghosts = new ArrayList<>();
@@ -28,6 +30,7 @@ public class GameModel {
         mainMenuButtons = new ArrayList<>();
         pauseButtons = new ArrayList<>();
         quitConfirmButtons = new ArrayList<>();
+        startButtons = new ArrayList<>();
 
         int centerX = 608/2 -100;
 
@@ -37,14 +40,31 @@ public class GameModel {
         mainMenuButtons.add(new MenuButton(centerX, 310, 200, 60, AssetManager.getInstance().getImage("Settings Button"), "SETTINGS"));
         mainMenuButtons.add(new MenuButton(centerX, 390, 200, 60, AssetManager.getInstance().getImage("Quit Button"), "QUIT"));
 
-        // Menu Pause (Tạm dừng)
+        //Start Button
+        startButtons.add(new MenuButton(77,60,100,100,AssetManager.getInstance().getImage("level1"),"LEVEL1" ));
+        startButtons.add(new MenuButton(254,60,100,100,AssetManager.getInstance().getImage("level2"),"LEVEL2" ));
+        startButtons.add(new MenuButton(431,60,100,100,AssetManager.getInstance().getImage("level3"),"LEVEL3" ));
+        startButtons.add(new MenuButton(77,220,100,100,AssetManager.getInstance().getImage("level4"),"LEVEL4" ));
+        startButtons.add(new MenuButton(254,220,100,100,AssetManager.getInstance().getImage("level5"),"LEVEL5" ));
+        startButtons.add(new MenuButton(431,220,100,100,AssetManager.getInstance().getImage("level6"),"LEVEL6" ));
+        startButtons.add(new MenuButton(77,380,100,100,AssetManager.getInstance().getImage("level7"),"LEVEL7" ));
+        startButtons.add(new MenuButton(254,380,100,100,AssetManager.getInstance().getImage("level8"),"LEVEL8" ));
+        startButtons.add(new MenuButton(431,380,100,100,AssetManager.getInstance().getImage("level9"),"LEVEL9" ));
+        startButtons.add(new MenuButton(268,540,100,100,AssetManager.getInstance().getImage("Back Square Button"),"BACK_TO_MENU" ));
+
+
+        // Menu Pause
         pauseButtons.add(new MenuButton(centerX, 200, 200, 60, AssetManager.getInstance().getImage("Resume Button"), "RESUME"));
         pauseButtons.add(new MenuButton(centerX, 280, 200, 60, AssetManager.getInstance().getImage("Return Square Button"), "RESTART"));
         pauseButtons.add(new MenuButton(centerX, 360, 200, 60, AssetManager.getInstance().getImage("Menu Button"), "MENU"));
 
-        // Xác nhận thoát (Quit Confirm)
-        quitConfirmButtons.add(new MenuButton(centerX - 60, 300, 80, 80, AssetManager.getInstance().getImage("V Square Button"), "YES_QUIT"));
-        quitConfirmButtons.add(new MenuButton(centerX + 80, 300, 80, 80, AssetManager.getInstance().getImage("X Square Button"), "NO_QUIT"));
+        // Quit Confirm
+        quitConfirmButtons.add(new MenuButton(centerX, 300, 80, 80, AssetManager.getInstance().getImage("V Square Button"), "YES_QUIT"));
+        quitConfirmButtons.add(new MenuButton(centerX + 120, 300, 80, 80, AssetManager.getInstance().getImage("X Square Button"), "NO_QUIT"));
+
+        //Controls
+        controlsButtons = new MenuButton(268,540,100,100,AssetManager.getInstance().getImage("Back Square Button"),"BACK_TO_MENU" );
+
 
         settingsButtons = new ArrayList<>();
         settingsButtons.add(new MenuButton(centerX, 250, 200, 60, AssetManager.getInstance().getImage("On Off Square Button"), "TOGGLE_SOUND"));
@@ -57,6 +77,8 @@ public class GameModel {
     public List<MenuButton> getMainMenuButtons() { return mainMenuButtons; }
     public List<MenuButton> getPauseButtons() { return pauseButtons; }
     public List<MenuButton> getQuitConfirmButtons() { return quitConfirmButtons; }
+    public List<MenuButton> getStartButtons () { return  startButtons;}
+    public MenuButton getControlsButtons () {return controlsButtons;}
 
     // --- PHẦN LOGIC GAME ---
     public boolean isGameOver() { return isGameOver; }

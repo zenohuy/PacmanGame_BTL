@@ -30,7 +30,7 @@ public class GamePanel extends JPanel {
                 break;
 
             case QUIT_CONFIRM:
-                drawMainMenu(g); // Vẽ menu mờ phía sau
+                drawMainMenu(g);
                 drawOverlay(g, 200);
                 drawQuitConfirm(g);
                 break;
@@ -41,23 +41,23 @@ public class GamePanel extends JPanel {
 
             case PAUSED:
                 drawGame(g);
-                drawOverlay(g, 150); // Phủ lớp mờ lên game đang chơi
+                drawOverlay(g, 150);
                 drawPauseMenu(g);
                 break;
 
             case CONTROLS:
                 g.setColor(Color.WHITE);
-                g.setFont(titleFont);
-                g.drawString("Di chuyển bằng các phím mũi tên", 150, 300);
-                g.drawString("Nhấn BACKSPACE để quay lại", 150, 350);
+                g.setFont(new Font("Arial", Font.BOLD, 30));
+                g.drawString("Di chuyển bằng các phím mũi tên", 63, 300);
+                g.drawString("Nhấn BACKSPACE để quay lại", 63, 350);
+                MenuButton btncl = gameModel.getControlsButtons();
+                btncl.draw(g);
                 break;
 
-            case LEVEL_SELECT:
+            case START:
                 g.setColor(Color.WHITE);
                 g.setFont(titleFont);
-                g.drawString("Chọn Level (Sắp ra mắt)", 250, 300);
-                g.drawString("Nhấn ENTER để chơi luôn", 250, 350);
-                g.drawString("Nhấn BACKSPACE để quay lại", 250, 400);
+                drawStartMenu(g);
                 break;
 
             case SETTINGS:
@@ -69,10 +69,10 @@ public class GamePanel extends JPanel {
                     btn.draw(g);
                 }
 
-                // Hiển thị trạng thái ON/OFF hiện tại
+                // Sound ON/OFF hiện tại
                 g.setFont(new Font("Arial", Font.BOLD, 25));
                 String soundStatus = SoundManager.getInstance().isMuted() ? "OFF" : "ON";
-                g.drawString("Sound: " + soundStatus, 340, 230);
+                g.drawString("Sound: " + soundStatus, 225, 230);
                 break;
         }
     }
@@ -84,6 +84,12 @@ public class GamePanel extends JPanel {
 
     private void drawMainMenu(Graphics g) {
         for (MenuButton btn : gameModel.getMainMenuButtons()) {
+            btn.draw(g);
+        }
+    }
+
+    private void drawStartMenu (Graphics g){
+        for (MenuButton btn: gameModel.getStartButtons()){
             btn.draw(g);
         }
     }
@@ -100,11 +106,12 @@ public class GamePanel extends JPanel {
     private void drawQuitConfirm(Graphics g) {
         g.setColor(Color.WHITE);
         g.setFont(new Font("Arial", Font.BOLD, 30));
-        g.drawString("Bạn chắc chắn muốn thoát game chứ?", 60, 200);
+        g.drawString("Bạn chắc chắn muốn thoát game chứ?", 30, 200);
         for (MenuButton btn : gameModel.getQuitConfirmButtons()) {
             btn.draw(g);
         }
     }
+
 
     private void drawGame(Graphics g) {
         drawMap(g);

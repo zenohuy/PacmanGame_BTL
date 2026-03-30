@@ -168,6 +168,13 @@ public class GameController implements  Runnable, KeyListener, MouseListener {
                 }
             }
         }
+        else if (state == GameState.START) {
+            for (MenuButton btn: model.getStartButtons()){
+                if (btn.isClicked(mx,my)){
+                    handleButtonClick(btn.getActionCommand());
+                }
+            }
+        }
         else if (state == GameState.QUIT_CONFIRM) {
             for (MenuButton btn : model.getQuitConfirmButtons()) {
                 if (btn.isClicked(mx, my)) {
@@ -188,13 +195,18 @@ public class GameController implements  Runnable, KeyListener, MouseListener {
                     handleButtonClick(btn.getActionCommand());
                 }
             }
+        } else if (state == GameState.CONTROLS) {
+            MenuButton btn= model.getControlsButtons();
+            if(btn.isClicked(mx,my)){
+                handleButtonClick(btn.getActionCommand());
+            }
         }
     }
 
     private void handleButtonClick(String command) {
         switch (command) {
             case "PLAY":
-                model.setCurrentState(GameState.LEVEL_SELECT);
+                model.setCurrentState(GameState.START);
                 break;
             case "CONTROLS":
                 model.setCurrentState(GameState.CONTROLS);
@@ -215,8 +227,7 @@ public class GameController implements  Runnable, KeyListener, MouseListener {
                 model.setCurrentState(GameState.PLAYING);
                 break;
             case "RESTART":
-                model.setMap(new Map("level1")); // Load lại màn
-                model.setGameOver(false);
+                model.resetGame("level1");
                 model.setCurrentState(GameState.PLAYING);
                 break;
             case "MENU":
@@ -228,6 +239,51 @@ public class GameController implements  Runnable, KeyListener, MouseListener {
             case "BACK_TO_MENU":
                 model.setCurrentState(GameState.MAIN_MENU);
                 break;
+            case "LEVEL1":
+                model.setMap(new Map("level1"));
+                model.setGameOver(false);
+                model.setCurrentState(GameState.PLAYING);
+                break;
+            case "LEVEL2":
+                model.setMap(new Map("level1"));
+                model.setGameOver(false);
+                model.setCurrentState(GameState.PLAYING);
+                break;
+            case "LEVEL3":
+                model.setMap(new Map("level1"));
+                model.setGameOver(false);
+                model.setCurrentState(GameState.PLAYING);
+                break;
+            case "LEVEL4":
+                model.setMap(new Map("level1"));
+                model.setGameOver(false);
+                model.setCurrentState(GameState.PLAYING);
+                break;
+            case "LEVEL5":
+                model.setMap(new Map("level1"));
+                model.setGameOver(false);
+                model.setCurrentState(GameState.PLAYING);
+                break;
+            case "LEVEL6":
+                model.setMap(new Map("level1"));
+                model.setGameOver(false);
+                model.setCurrentState(GameState.PLAYING);
+                break;
+            case "LEVEL7":
+                model.setMap(new Map("level1"));
+                model.setGameOver(false);
+                model.setCurrentState(GameState.PLAYING);
+                break;
+            case "LEVEL8":
+                model.setMap(new Map("level1"));
+                model.setGameOver(false);
+                model.setCurrentState(GameState.PLAYING);
+                break;
+            case "LEVEL9":
+                model.setMap(new Map("level1"));
+                model.setGameOver(false);
+                model.setCurrentState(GameState.PLAYING);
+                break;
         }
     }
 
@@ -236,7 +292,7 @@ public class GameController implements  Runnable, KeyListener, MouseListener {
         int key = e.getKeyCode();
         GameState state = model.getCurrentState();
 
-        // Xử lý phím ESC để Pause/Resume
+        // ESC: Pause/Resume
         if (key == KeyEvent.VK_ESCAPE) {
             if (state == GameState.PLAYING) {
                 model.setCurrentState(GameState.PAUSED);
@@ -247,16 +303,12 @@ public class GameController implements  Runnable, KeyListener, MouseListener {
 
         // Phím phụ để test các màn hình chưa có ảnh tĩnh (Level select, Controls)
         if (key == KeyEvent.VK_BACK_SPACE) {
-            if (state == GameState.LEVEL_SELECT || state == GameState.CONTROLS) {
+            if (state == GameState.START || state == GameState.CONTROLS) {
                 model.setCurrentState(GameState.MAIN_MENU);
             }
         }
-        if (key == KeyEvent.VK_ENTER && state == GameState.LEVEL_SELECT) {
-            model.setMap(new Map("level1"));
-            model.setCurrentState(GameState.PLAYING);
-        }
 
-        // Di chuyển Pacman (Chỉ nhận khi PLAYING)
+        // move Pacman
         if (state == GameState.PLAYING) {
             PacMan pacman = model.getPacman();
             if (pacman == null) return;
