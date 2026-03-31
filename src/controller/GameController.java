@@ -14,6 +14,7 @@ public class GameController implements  Runnable, KeyListener, MouseListener {
     private GameModel model;
     private GamePanel viewPanel;
     private GameWindow window;
+    private Map crmap = new Map("level1");
 
     private Thread gameThread;
     private boolean isRunning = false;
@@ -74,7 +75,7 @@ public class GameController implements  Runnable, KeyListener, MouseListener {
 
             if (canMove(nextX, nextY)) {
                 pacman.update();
-                checkEatCherry(pacman.getX(), pacman.getY());
+                checkEatCherry();
             }
         }
 
@@ -110,17 +111,22 @@ public class GameController implements  Runnable, KeyListener, MouseListener {
         return true;
     }
 
-    private void checkEatCherry(int x, int y) {
-        int tileSize = GameModel.TILE_SIZE;
+    private void checkEatCherry() {
+        PacMan pacman = model.getPacman();
+        if (pacman == null) return;
 
-        int centerCol = (x + tileSize / 2) / tileSize;
-        int centerRow = (y + tileSize / 2) / tileSize;
+        java.awt.Rectangle pacmanBounds = new java.awt.Rectangle(
+                pacman.getX() + 8, pacman.getY() + 8,
+                GameModel.TILE_SIZE - 16, GameModel.TILE_SIZE - 16
+        );
 
-        char[][] grid = model.getMap().getGrid();
-
-        if (grid[centerRow][centerCol] == '.') {
-            grid[centerRow][centerCol] = ' ';
-            model.addScore(10);
+        java.util.Iterator<Item> iterator = model.getItems().iterator();
+        while (iterator.hasNext()) {
+            Item item = iterator.next();
+            if (pacmanBounds.intersects(item.getBounds())) {
+                model.addScore(item.getScoreValue());
+                iterator.remove();
+            }
         }
     }
 
@@ -203,6 +209,13 @@ public class GameController implements  Runnable, KeyListener, MouseListener {
         }
     }
 
+    private void startLevel(String levelName) {
+        crmap.setCurrentLevel(levelName);
+        model.setMap(new Map(levelName));
+        model.setGameOver(false);
+        model.setCurrentState(GameState.PLAYING);
+    }
+
     private void handleButtonClick(String command) {
         switch (command) {
             case "PLAY":
@@ -227,7 +240,7 @@ public class GameController implements  Runnable, KeyListener, MouseListener {
                 model.setCurrentState(GameState.PLAYING);
                 break;
             case "RESTART":
-                model.resetGame("level1");
+                model.resetGame(crmap.getCurrentLevel());
                 model.setCurrentState(GameState.PLAYING);
                 break;
             case "MENU":
@@ -240,49 +253,31 @@ public class GameController implements  Runnable, KeyListener, MouseListener {
                 model.setCurrentState(GameState.MAIN_MENU);
                 break;
             case "LEVEL1":
-                model.setMap(new Map("level1"));
-                model.setGameOver(false);
-                model.setCurrentState(GameState.PLAYING);
+                startLevel("level1");
                 break;
             case "LEVEL2":
-                model.setMap(new Map("level1"));
-                model.setGameOver(false);
-                model.setCurrentState(GameState.PLAYING);
+                startLevel("level2");
                 break;
             case "LEVEL3":
-                model.setMap(new Map("level1"));
-                model.setGameOver(false);
-                model.setCurrentState(GameState.PLAYING);
+                startLevel("level3");
                 break;
             case "LEVEL4":
-                model.setMap(new Map("level1"));
-                model.setGameOver(false);
-                model.setCurrentState(GameState.PLAYING);
+                startLevel("level1");
                 break;
             case "LEVEL5":
-                model.setMap(new Map("level1"));
-                model.setGameOver(false);
-                model.setCurrentState(GameState.PLAYING);
+                startLevel("level2");
                 break;
             case "LEVEL6":
-                model.setMap(new Map("level1"));
-                model.setGameOver(false);
-                model.setCurrentState(GameState.PLAYING);
+                startLevel("level3");
                 break;
             case "LEVEL7":
-                model.setMap(new Map("level1"));
-                model.setGameOver(false);
-                model.setCurrentState(GameState.PLAYING);
+                startLevel("level1");
                 break;
             case "LEVEL8":
-                model.setMap(new Map("level1"));
-                model.setGameOver(false);
-                model.setCurrentState(GameState.PLAYING);
+                startLevel("level2");
                 break;
             case "LEVEL9":
-                model.setMap(new Map("level1"));
-                model.setGameOver(false);
-                model.setCurrentState(GameState.PLAYING);
+                startLevel("level3");
                 break;
         }
     }

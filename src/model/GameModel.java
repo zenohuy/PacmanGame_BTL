@@ -8,6 +8,7 @@ public class GameModel {
     private Map map;
     public static final int TILE_SIZE = 32;
     private List<Ghost> ghosts;
+    private List<Item> items;
     private PacMan pacman;
     private int score = 0;
     private boolean isGameOver = false;
@@ -23,6 +24,7 @@ public class GameModel {
 
     public GameModel() {
         this.ghosts = new ArrayList<>();
+        this.items = new ArrayList<>();
         initMenus();
     }
 
@@ -80,7 +82,7 @@ public class GameModel {
     public List<MenuButton> getStartButtons () { return  startButtons;}
     public MenuButton getControlsButtons () {return controlsButtons;}
 
-    // --- PHẦN LOGIC GAME ---
+    // PHẦN LOGIC GAME
     public boolean isGameOver() { return isGameOver; }
     public void setGameOver(boolean isGameOver) { this.isGameOver = isGameOver; }
 
@@ -90,6 +92,9 @@ public class GameModel {
     }
 
     private void spawnEntities() {
+        ghosts.clear();
+        items.clear();
+        this.score =0;
         char[][] grid = map.getGrid();
 
         for (int row = 0; row < map.getRows(); row++) {
@@ -114,13 +119,29 @@ public class GameModel {
                 } else if (cell == 'P') {
                     pacman = new PacMan(x, y);
                     grid[row][col] = ' ';
+                } else if (cell == '.') {
+                    items.add(new Item(x, y, "cherry", 10, "cherry"));
+                    grid[row][col] = ' ';
                 }
             }
         }
     }
 
+    public void resetGame(String levelName) {
+        this.map.setCurrentLevel(levelName);
+        this.setMap(new Map(levelName));
+        this.isGameOver = false;
+
+        this.score =0;
+        pacman.reset();
+        for (Ghost ghost: ghosts){
+            ghost.reset();
+        }
+    }
+
     public Map getMap() { return map; }
     public List<Ghost> getGhosts() { return ghosts; }
+    public List<Item> getItems() { return items; }
     public PacMan getPacman() { return pacman; }
     public int getScore() { return score; }
     public void addScore(int points) { this.score += points; }

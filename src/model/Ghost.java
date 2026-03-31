@@ -4,6 +4,8 @@ import utils.AssetManager;
 import java.awt.image.BufferedImage;
 
 public class Ghost {
+    private int startX;
+    private int startY;
     private int x;
     private int y;
     private int speed;
@@ -14,6 +16,8 @@ public class Ghost {
     public Ghost(int x, int y, String imageName) {
         this.x = x;
         this.y = y;
+        this.startX = x;
+        this.startY = y;
         this.speed = 1;
         this.dx = 1;
         this.dy = 0;
@@ -29,6 +33,11 @@ public class Ghost {
     public void setDirection(int dx, int dy) {
         this.dx = dx;
         this.dy = dy;
+    }
+
+    public void reset (){
+        this.x = this.startX;
+        this.y = this.startY;
     }
 
     public int getX() { return x; }

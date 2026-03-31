@@ -63,7 +63,7 @@ public class GamePanel extends JPanel {
             case SETTINGS:
                 g.setColor(Color.WHITE);
                 g.setFont(new Font("Arial", Font.BOLD, 40));
-                g.drawString("SETTINGS", 300, 150);
+                g.drawString("SETTINGS", 200, 150);
 
                 for (MenuButton btn : gameModel.getSettingsButtons()) {
                     btn.draw(g);
@@ -172,6 +172,14 @@ public class GamePanel extends JPanel {
         PacMan pacman = gameModel.getPacman();
         if (pacman != null && pacman.getCurrentImage() != null) {
             g.drawImage(pacman.getCurrentImage(), pacman.getX(), pacman.getY(),tileSize, tileSize, null);
+        }
+
+        if (gameModel.getItems() != null) {
+            for (Item item : gameModel.getItems()) {
+                if (item.getImage() != null) {
+                    g.drawImage(item.getImage(), item.getX(), item.getY(), tileSize, tileSize, null);
+                }
+            }
         }
 
         if (gameModel.getGhosts() != null) {
