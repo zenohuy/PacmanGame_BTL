@@ -1,6 +1,8 @@
 package controller;
 
 import model.*;
+import utils.AssetManager;
+import utils.DatabaseManager;
 import utils.SoundManager;
 import view.GamePanel;
 import view.GameWindow;
@@ -13,6 +15,7 @@ public class GameController implements Runnable {
     private GameWindow window;
     private String crmap = "level1";
     private SoundManager sound;
+    private GameState previousState = null;
 
     private Thread gameThread;
     private boolean isRunning = false;
@@ -26,13 +29,20 @@ public class GameController implements Runnable {
         sound = SoundManager.getInstance();
         sound.loadSound("eat.wav");
         sound.loadSound("background.wav");
+        sound.loadSound("menu.wav");
+        sound.loadSound("click.wav");
+        sound.loadSound("game_loss.wav");
+        sound.loadSound("game_win.wav");
 
         viewPanel = new GamePanel(model);
+
+        viewPanel.setFocusTraversalKeysEnabled(false); // Tranh de viewPanel nuot phim tab trong Swing
 
         // Tích hợp InputHandler
         InputHandler inputHandler = new InputHandler(this);
         viewPanel.addKeyListener(inputHandler.getKeyListener());
         viewPanel.addMouseListener(inputHandler.getMouseListener());
+        viewPanel.addMouseMotionListener(inputHandler.getMouseMotionListener());
 
         viewPanel.setFocusable(true);
         viewPanel.requestFocusInWindow();
@@ -61,6 +71,7 @@ public class GameController implements Runnable {
 
             if (delta >= 1) {
                 update();
+                updateHoverAnimations();
                 viewPanel.repaint();
                 delta--;
             }
@@ -68,11 +79,13 @@ public class GameController implements Runnable {
     }
 
     private void update() {
+        handleStateSound();
+
         if (model.getCurrentState() != GameState.PLAYING) {
             return;
         }
 
-        if (model.isGameOver()) {
+        if (model.isGameOver() || model.isGameWon()) {
             return;
         }
 
@@ -94,6 +107,7 @@ public class GameController implements Runnable {
         }
 
         checkGhostCollision();
+        checkWinCondition();
     }
 
     private boolean canMove(int nextX, int nextY) {
@@ -164,7 +178,7 @@ public class GameController implements Runnable {
                 validMoves.add(dir);
             }
         }
-        
+
         if (validMoves.isEmpty()) {
             ghost.setDirection(-ghost.getDx(), -ghost.getDy());
             return;
@@ -191,7 +205,25 @@ public class GameController implements Runnable {
 
             if (pacmanBounds.intersects(ghostBounds)) {
                 model.setGameOver(true);
+                sound.stopAndRemoveLoop("background.wav");
+                sound.playSound("game_loss.wav");
                 break;
+            }
+        }
+    }
+
+    private void checkWinCondition() {
+        if (model.getItems().isEmpty()) {
+            if (!model.isGameWon()) {
+                model.setGameWon(true);
+                sound.stopAndRemoveLoop("background.wav");
+                sound.playSound("game_win.wav");
+                if (model.getCurrentUser() != null) {
+                    DatabaseManager.getInstance().updateScoreAndUnlockNext(
+                            model.getCurrentUser(), model.getSelectedLevelId(), model.getScore()
+                    );
+                    model.setMaxUnlockedLevel(Math.max(model.getMaxUnlockedLevel(), model.getSelectedLevelId() + 1));
+                }
             }
         }
     }
@@ -200,27 +232,133 @@ public class GameController implements Runnable {
         this.crmap = levelName;
         model.setMap(new Map(levelName));
         model.setGameOver(false);
+        model.setGameWon(false);
+        sound.stopAllLooping();
         model.setCurrentState(GameState.PLAYING);
         sound.loopSound("background.wav");
+    }
+
+    // Xác định nhóm nhạc nền cho từng trạng thái
+    private String getMusicForState(GameState state) {
+        if (state == null) return null;
+        switch (state) {
+            case MAIN_MENU:
+            case START:
+            case CONTROLS:
+            case QUIT_CONFIRM:
+            case LEVEL_LOCKED_POPUP:
+            case LEVEL_INFO_POPUP:
+                return "menu.wav";
+            case PLAYING:
+                return "background.wav";
+            default:
+                return null; // PAUSED, SETTINGS, LOGIN, REGISTER: không có nhạc
+        }
+    }
+
+    // Quản lý âm thanh khi chuyển trạng thái
+    private void handleStateSound() {
+        GameState currentState = model.getCurrentState();
+        if (currentState == previousState) return;
+
+        String prevMusic = getMusicForState(previousState);
+        String currMusic = getMusicForState(currentState);
+
+        // Nếu cả 2 state dùng chung nhạc → giữ nguyên, không làm gì
+        if (prevMusic != null && prevMusic.equals(currMusic)) {
+            previousState = currentState;
+            return;
+        }
+
+        // Dừng nhạc cũ (nếu có)
+        if (prevMusic != null) {
+            sound.stopAndRemoveLoop(prevMusic);
+        }
+
+        // Phát nhạc mới (nếu có)
+        if (currMusic != null) {
+            // Nếu đang PLAYING mà game over/won thì không phát lại background
+            if (currentState == GameState.PLAYING && (model.isGameOver() || model.isGameWon())) {
+                // Không phát
+            } else {
+                sound.loopSound(currMusic);
+            }
+        }
+
+        previousState = currentState;
     }
 
     // Phương thức công khai được gọi từ InputHandler để xử lý click chuột
     public void handleMousePress(int mx, int my) {
         GameState state = model.getCurrentState();
 
-        if (state == GameState.MAIN_MENU) {
+        if (state == GameState.LOGIN) {
+            // Check fields click
+            if (my >= 304 && my <= 331 && mx >= 225 && mx <= 407) model.setActiveField(0);
+            else if (my >= 366 && my <= 393 && mx >= 225 && mx <= 407) model.setActiveField(1);
+
+            for (MenuButton btn : model.getLoginButtons()) {
+                if (btn.isClicked(mx, my)) {
+                    handleButtonClick(btn.getActionCommand());
+                }
+            }
+        }
+        else if (state == GameState.REGISTER) {
+            if (my >= 302 && my <= 329 && mx >= 225 && mx <= 404) model.setActiveField(0);
+            else if (my >= 364 && my <= 391 && mx >= 225 && mx <= 404) model.setActiveField(1);
+
+            for (MenuButton btn : model.getRegisterButtons()) {
+                if (btn.isClicked(mx, my)) {
+                    handleButtonClick(btn.getActionCommand());
+                }
+            }
+        }
+        else if (state == GameState.MAIN_MENU) {
             for (MenuButton btn : model.getMainMenuButtons()) {
                 if (btn.isClicked(mx, my)) {
                     handleButtonClick(btn.getActionCommand());
                 }
             }
         } else if (state == GameState.PLAYING) {
+            if (model.isGameOver()) {
+                for (MenuButton btn : model.getGameOverButtons()) {
+                    if (btn.isClicked(mx, my)) {
+                        handleButtonClick(btn.getActionCommand());
+                    }
+                }
+                return;
+            }
+
+            if (model.isGameWon()) {
+                for (MenuButton btn : model.getGameWonButtons()) {
+                    if (btn.isClicked(mx, my)) {
+                        handleButtonClick(btn.getActionCommand());
+                    }
+                }
+                return;
+            }
+
             for (MenuButton btn : model.getGamePlayButtons()) {
                 if (btn.isClicked(mx, my)) {
                     handleButtonClick(btn.getActionCommand());
                 }
             }
-        } else if (state == GameState.START) {
+        }
+        else if (state == GameState.LEVEL_LOCKED_POPUP) {
+            for (MenuButton btn : model.getLevelLockedButtons()) {
+                if (btn.isClicked(mx, my)) {
+                    handleButtonClick(btn.getActionCommand());
+                }
+            }
+        }
+        else if (state == GameState.LEVEL_INFO_POPUP) {
+            for (MenuButton btn : model.getLevelInfoButtons()) {
+                if (btn.isClicked(mx, my)) {
+                    handleButtonClick(btn.getActionCommand());
+                }
+            }
+        }
+        else if (state == GameState.START) {
             for (MenuButton btn: model.getStartButtons()){
                 if (btn.isClicked(mx,my)){
                     handleButtonClick(btn.getActionCommand());
@@ -255,9 +393,94 @@ public class GameController implements Runnable {
         }
     }
 
+    // Xử lý di chuột (hover)
+    public void handleMouseMove(int mx, int my) {
+        GameState state = model.getCurrentState();
+        java.util.List<MenuButton> buttons = getButtonsForState(state);
+        if (buttons != null) {
+            for (MenuButton btn : buttons) {
+                btn.setHovered(btn.contains(mx, my));
+            }
+        }
+        // Xử lý riêng cho controls (button đơn)
+        if (state == GameState.CONTROLS) {
+            MenuButton btn = model.getControlsButtons();
+            btn.setHovered(btn.contains(mx, my));
+        }
+    }
+
+    // Lấy danh sách buttons theo trạng thái hiện tại
+    private java.util.List<MenuButton> getButtonsForState(GameState state) {
+        switch (state) {
+            case LEVEL_LOCKED_POPUP: return model.getLevelLockedButtons();
+            case LEVEL_INFO_POPUP:   return model.getLevelInfoButtons();
+            case LOGIN:        return model.getLoginButtons();
+            case REGISTER:     return model.getRegisterButtons();
+            case MAIN_MENU:    return model.getMainMenuButtons();
+            case START:        return model.getStartButtons();
+            case PAUSED:       return model.getPauseButtons();
+            case QUIT_CONFIRM: return model.getQuitConfirmButtons();
+            case SETTINGS:     return model.getSettingsButtons();
+            case PLAYING:
+                if (model.isGameOver()) return model.getGameOverButtons();
+                if (model.isGameWon())  return model.getGameWonButtons();
+                return model.getGamePlayButtons();
+            default:           return null;
+        }
+    }
+
+    // Cập nhật animation hover cho tất cả buttons
+    private void updateHoverAnimations() {
+        updateButtonListAnimation(model.getLevelLockedButtons());
+        updateButtonListAnimation(model.getLevelInfoButtons());
+        updateButtonListAnimation(model.getLoginButtons());
+        updateButtonListAnimation(model.getRegisterButtons());
+        updateButtonListAnimation(model.getMainMenuButtons());
+        updateButtonListAnimation(model.getStartButtons());
+        updateButtonListAnimation(model.getPauseButtons());
+        updateButtonListAnimation(model.getQuitConfirmButtons());
+        updateButtonListAnimation(model.getSettingsButtons());
+        updateButtonListAnimation(model.getGamePlayButtons());
+        updateButtonListAnimation(model.getGameOverButtons());
+        updateButtonListAnimation(model.getGameWonButtons());
+        if (model.getControlsButtons() != null) {
+            model.getControlsButtons().updateHoverAnimation();
+        }
+    }
+
+    private void updateButtonListAnimation(java.util.List<MenuButton> buttons) {
+        if (buttons == null) return;
+        for (MenuButton btn : buttons) {
+            btn.updateHoverAnimation();
+        }
+    }
+
     // Phim tat
     public void handleKeyPress(int key) {
         GameState state = model.getCurrentState();
+
+        if (state == GameState.LOGIN || state == GameState.REGISTER) {
+            if (key == KeyEvent.VK_TAB) {
+                model.setActiveField(1 - model.getActiveField());
+            } else if (key == KeyEvent.VK_ENTER) {
+                if (state == GameState.LOGIN) handleButtonClick("CONFIRM");
+                else handleButtonClick("CONFIRM"); // Register confirm
+            } else if (key == KeyEvent.VK_BACK_SPACE) {
+                if (state == GameState.LOGIN) {
+                    if (model.getActiveField() == 0 && model.getLoginUsername().length() > 0) {
+                        model.setLoginUsername(model.getLoginUsername().substring(0, model.getLoginUsername().length() - 1));
+                    } else if (model.getActiveField() == 1 && model.getLoginPassword().length() > 0) {
+                        model.setLoginPassword(model.getLoginPassword().substring(0, model.getLoginPassword().length() - 1));
+                    }
+                } else {
+                    if (model.getActiveField() == 0 && model.getRegisterUsername().length() > 0) {
+                        model.setRegisterUsername(model.getRegisterUsername().substring(0, model.getRegisterUsername().length() - 1));
+                    } else if (model.getActiveField() == 1 && model.getRegisterPassword().length() > 0) {
+                        model.setRegisterPassword(model.getRegisterPassword().substring(0, model.getRegisterPassword().length() - 1));
+                    }
+                }
+            }
+        }
 
         // ESC: Pause/Resume
         if (key == java.awt.event.KeyEvent.VK_ESCAPE) {
@@ -294,9 +517,87 @@ public class GameController implements Runnable {
         }
     }
 
+    public void handleKeyTyped(char c) {
+        GameState state = model.getCurrentState();
+        if (state != GameState.LOGIN && state != GameState.REGISTER) return;
+
+        // Chỉ nhận chữ cái, số, hoặc vài ký tự cơ bản
+        if (Character.isLetterOrDigit(c) || c == '_' || c == '-' || c == '@' || c == '.') {
+            if (state == GameState.LOGIN) {
+                if (model.getActiveField() == 0 && model.getLoginUsername().length() < 20) {
+                    model.setLoginUsername(model.getLoginUsername() + c);
+                } else if (model.getActiveField() == 1 && model.getLoginPassword().length() < 20) {
+                    model.setLoginPassword(model.getLoginPassword() + c);
+                }
+            } else {
+                if (model.getActiveField() == 0 && model.getRegisterUsername().length() < 20) {
+                    model.setRegisterUsername(model.getRegisterUsername() + c);
+                } else if (model.getActiveField() == 1 && model.getRegisterPassword().length() < 20) {
+                    model.setRegisterPassword(model.getRegisterPassword() + c);
+                }
+            }
+        }
+    }
+
+    private void goToNextLevel() {
+        String nextLevel;
+        switch (crmap) {
+            case "leveltest": nextLevel = "level2"; break;
+            case "level1":    nextLevel = "level2"; break;
+            case "level2":    nextLevel = "level3"; break;
+            case "level3":    nextLevel = "level1"; break;
+            default:          nextLevel = "level1"; break;
+        }
+        startLevel(nextLevel);
+    }
+
     private void handleButtonClick(String command) {
+        sound.playSound("click.wav");
         switch (command) {
+            case "CONFIRM":
+                if (model.getCurrentState() == GameState.LOGIN) {
+                    if (DatabaseManager.getInstance().login(model.getLoginUsername(), model.getLoginPassword())) {
+                        model.setLoginMessage("Success!");
+                        model.setCurrentUser(model.getLoginUsername());
+                        model.setMaxUnlockedLevel(DatabaseManager.getInstance().getUnlockedMaxLevel(model.getCurrentUser()));
+                        model.setCurrentState(GameState.MAIN_MENU);
+                    } else {
+                        model.setLoginMessage("Invalid username or password");
+                    }
+                } else if (model.getCurrentState() == GameState.REGISTER) {
+                    if (model.getRegisterUsername().length() < 3) {
+                        model.setLoginMessage("Username too short");
+                    } else if (model.getRegisterPassword().length() < 3) {
+                        model.setLoginMessage("Password too short");
+                    } else if (DatabaseManager.getInstance().register(model.getRegisterUsername(), model.getRegisterPassword())) {
+                        model.setLoginMessage("Registered! Please login.");
+                        model.setCurrentState(GameState.LOGIN);
+                        model.setLoginUsername(model.getRegisterUsername());
+                        model.setLoginPassword("");
+                        model.setRegisterUsername("");
+                        model.setRegisterPassword("");
+                    } else {
+                        model.setLoginMessage("Registration failed (Username exists?)");
+                    }
+                }
+                break;
+            case "GO REGISTER":
+                model.setLoginMessage("");
+                model.setCurrentState(GameState.REGISTER);
+                break;
+            case "BACK":
+                model.setLoginMessage("");
+                model.setCurrentState(GameState.LOGIN);
+                break;
             case "PLAY":
+                if (model.getCurrentState() == GameState.LEVEL_INFO_POPUP) {
+                    startLevel(getMapName(model.getSelectedLevelId()));
+                } else {
+                    model.setCurrentState(GameState.START);
+                }
+                break;
+            case "X":
+            case "CANCEL":
                 model.setCurrentState(GameState.START);
                 break;
             case "CONTROLS":
@@ -321,11 +622,30 @@ public class GameController implements Runnable {
                 model.setCurrentState(GameState.PLAYING);
                 break;
             case "RESTART":
+                sound.stopSound("game_loss.wav");
+                sound.stopSound("game_win.wav");
+                sound.stopAllLooping();
                 startLevel(this.crmap);
                 model.setCurrentState(GameState.PLAYING);
                 break;
             case "MENU":
+                sound.stopSound("game_loss.wav");
+                sound.stopSound("game_win.wav");
+                sound.stopAllLooping();
                 model.setCurrentState(GameState.MAIN_MENU);
+                break;
+            case "TOGGLE_PASSWORD":
+                boolean newShowState = !model.isShowPassword();
+                model.setShowPassword(newShowState);
+                // Cập nhật icon cho nút toggle trên cả Login và Register
+                java.awt.image.BufferedImage eyeIcon = utils.AssetManager.getInstance()
+                        .getImage(newShowState ? "viewPassword" : "hidePassword");
+                for (MenuButton btn : model.getLoginButtons()) {
+                    if ("TOGGLE_PASSWORD".equals(btn.getActionCommand())) btn.setImage(eyeIcon);
+                }
+                for (MenuButton btn : model.getRegisterButtons()) {
+                    if ("TOGGLE_PASSWORD".equals(btn.getActionCommand())) btn.setImage(eyeIcon);
+                }
                 break;
             case "TOGGLE_SOUND":
                 SoundManager.getInstance().toggleMute();
@@ -333,33 +653,41 @@ public class GameController implements Runnable {
             case "BACK_TO_MENU":
                 model.setCurrentState(GameState.MAIN_MENU);
                 break;
-            case "LEVEL1":
-                startLevel("level1");
-                break;
-            case "LEVEL2":
-                startLevel("level2");
-                break;
-            case "LEVEL3":
-                startLevel("level3");
-                break;
-            case "LEVEL4":
-                startLevel("level1");
-                break;
-            case "LEVEL5":
-                startLevel("level2");
-                break;
-            case "LEVEL6":
-                startLevel("level3");
-                break;
-            case "LEVEL7":
-                startLevel("level1");
-                break;
-            case "LEVEL8":
-                startLevel("level2");
-                break;
-            case "LEVEL9":
-                startLevel("level3");
+            case "LEVEL1": handleLevelSelection(1); break;
+            case "LEVEL2": handleLevelSelection(2); break;
+            case "LEVEL3": handleLevelSelection(3); break;
+            case "LEVEL4": handleLevelSelection(4); break;
+            case "LEVEL5": handleLevelSelection(5); break;
+            case "LEVEL6": handleLevelSelection(6); break;
+            case "LEVEL7": handleLevelSelection(7); break;
+            case "LEVEL8": handleLevelSelection(8); break;
+            case "LEVEL9": handleLevelSelection(9); break;
+            case "NEXT_LEVEL":
+                sound.stopSound("game_win.wav");
+                goToNextLevel();
                 break;
         }
+    }
+
+    private void handleLevelSelection(int requestedLvl) {
+        if (requestedLvl > model.getMaxUnlockedLevel()) {
+            model.setCurrentState(GameState.LEVEL_LOCKED_POPUP);
+        } else {
+            int highScore = DatabaseManager.getInstance().getHighScore(model.getCurrentUser(), requestedLvl);
+            model.setSelectedLevelId(requestedLvl);
+            if (highScore >= 0) {
+                model.setSelectedLevelHighScore(highScore);
+                model.setCurrentState(GameState.LEVEL_INFO_POPUP);
+            } else {
+                startLevel(getMapName(requestedLvl));
+            }
+        }
+    }
+
+    private String getMapName(int lvl) {
+        int mod = lvl % 3;
+        if (mod == 1) return "leveltest";
+        if (mod == 2) return "level2";
+        return "level3";
     }
 }

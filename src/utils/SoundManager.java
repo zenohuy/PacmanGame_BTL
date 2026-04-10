@@ -55,7 +55,10 @@ public class SoundManager {
         loopingClips.add(soundName);
         if (isMuted) return;
         Clip clip = soundCache.get(soundName);
-        if (clip != null) clip.loop(Clip.LOOP_CONTINUOUSLY);
+        if (clip != null && !clip.isRunning()) {
+            clip.setFramePosition(0);
+            clip.loop(Clip.LOOP_CONTINUOUSLY);
+        }
     }
 
     public void stopSound(String soundName) {
@@ -63,6 +66,24 @@ public class SoundManager {
         if (clip != null && clip.isRunning()) {
             clip.stop();
         }
+    }
+
+    public void stopAndRemoveLoop(String soundName) {
+        loopingClips.remove(soundName);
+        Clip clip = soundCache.get(soundName);
+        if (clip != null && clip.isRunning()) {
+            clip.stop();
+        }
+    }
+
+    public void stopAllLooping() {
+        for (String name : loopingClips) {
+            Clip clip = soundCache.get(name);
+            if (clip != null && clip.isRunning()) {
+                clip.stop();
+            }
+        }
+        loopingClips.clear();
     }
 
     public boolean isMuted() { return isMuted; }
