@@ -104,3 +104,10 @@ private static final String PASS = "";     // Default password
 - Object-Oriented Programming with Java
 - UI design using Swing/AWT
 - Database access and JDBC connectivity 
+
+## 🙌 Final Words
+Thank you for taking the time to explore this project.
+I hope it offers you a bit of fun and some useful insights into Java, game development, and software architecture.
+
+There’s still plenty of room for improvement, but I’m glad to share this small effort with you.
+Happy coding, and enjoy the game! 🎉
