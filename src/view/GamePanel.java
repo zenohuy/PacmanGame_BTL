@@ -119,13 +119,11 @@ public class GamePanel extends JPanel {
     }
 
     private void drawLoginScreen(Graphics g) {
-        // Username field
         g.setColor(gameModel.getActiveField() == 0 ? Color.YELLOW : Color.WHITE);
         g.drawRect(225, 304, 182, 27);
         g.setColor(Color.WHITE);
         g.drawString(gameModel.getLoginUsername(), 230, 321);
 
-        // Password field
         g.setColor(gameModel.getActiveField() == 1 ? Color.YELLOW : Color.WHITE);
         g.drawRect(225, 366, 182, 27);
         g.setColor(Color.WHITE);
@@ -144,13 +142,11 @@ public class GamePanel extends JPanel {
     }
 
     private void drawRegisterScreen(Graphics g) {
-        // Username field
         g.setColor(gameModel.getActiveField() == 0 ? Color.YELLOW : Color.WHITE);
         g.drawRect(225, 302, 179, 27);
         g.setColor(Color.WHITE);
         g.drawString(gameModel.getRegisterUsername(), 230, 320);
 
-        // Password field
         g.setColor(gameModel.getActiveField() == 1 ? Color.YELLOW : Color.WHITE);
         g.drawRect(225, 364, 179, 27);
         g.setColor(Color.WHITE);
@@ -159,7 +155,6 @@ public class GamePanel extends JPanel {
                 : new String(new char[gameModel.getRegisterPassword().length()]).replace("\0", "*");
         g.drawString(regPass, 230, 380);
 
-        // Message
         g.setColor(Color.RED);
         g.drawString(gameModel.getLoginMessage(), 150, 400);
 

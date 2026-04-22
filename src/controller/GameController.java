@@ -43,7 +43,6 @@ public class GameController implements Runnable {
 
         viewPanel.setFocusTraversalKeysEnabled(false); // Tranh de viewPanel nuot phim tab trong Swing
 
-        // Tích hợp InputHandler
         InputHandler inputHandler = new InputHandler(this);
         viewPanel.addKeyListener(inputHandler.getKeyListener());
         viewPanel.addMouseListener(inputHandler.getMouseListener());
@@ -91,19 +90,16 @@ public class GameController implements Runnable {
         if (pacman == null) return;
 
         final int tileSize = 32;
-        // Kiểm tra xem Pac-Man có đang ở đúng ô lưới không
         boolean onTileCenter = (pacman.getX() % tileSize == 0) && (pacman.getY() % tileSize == 0);
 
         // Xử lý hướng dự định
         if (bufferedDx != 0 || bufferedDy != 0) {
-            // Nếu quay đầu 180 độ -> Check canMove và cho phép quay luôn ở bất cứ đâu
             if (bufferedDx == -pacman.getDx() && bufferedDy == -pacman.getDy()) {
                 if (canMove(pacman.getX() + bufferedDx * pacman.getSpeed(), pacman.getY() + bufferedDy * pacman.getSpeed())) {
                     pacman.setDirection(bufferedDx, bufferedDy);
                     bufferedDx = 0; bufferedDy = 0;
                 }
             }
-            // Nếu rẽ 90 độ -> Chỉ cho rẽ khi đang ở đúng tâm ô và đường đó đi được
             else if (onTileCenter) {
                 if (canMove(pacman.getX() + bufferedDx * pacman.getSpeed(), pacman.getY() + bufferedDy * pacman.getSpeed())) {
                     pacman.setDirection(bufferedDx, bufferedDy);
@@ -112,7 +108,6 @@ public class GameController implements Runnable {
             }
         }
 
-        // thực hiện di chuyển
         int nextX = pacman.getX() + pacman.getDx() * pacman.getSpeed();
         int nextY = pacman.getY() + pacman.getDy() * pacman.getSpeed();
 
@@ -122,7 +117,6 @@ public class GameController implements Runnable {
         } else {
             pacman.setX(((pacman.getX() + tileSize / 2) / tileSize) * tileSize);
             pacman.setY(((pacman.getY() + tileSize / 2) / tileSize) * tileSize);
-            // Dừng di chuyển
             pacman.setDirection(0, 0);
         }
         if (model.getGhosts() != null) {
@@ -186,13 +180,11 @@ public class GameController implements Runnable {
         if (canMove(nextX, nextY)) {
             ghost.move();
 
-            // Chỉ thử đổi hướng khi đang đứng đúng tâm tile
             if (ghost.getX() % tileSize == 0 && ghost.getY() % tileSize == 0) {
                 changeGhostDirection(ghost);
             }
 
         } else {
-            // Snap về tile trước đó (ngược hướng di chuyển)
             if (ghost.getDx() != 0) {
                 ghost.setX((ghost.getX() / tileSize) * tileSize);
             }
@@ -308,22 +300,17 @@ public class GameController implements Runnable {
         String prevMusic = getMusicForState(previousState);
         String currMusic = getMusicForState(currentState);
 
-        // Nếu cả 2 state dùng chung nhạc → giữ nguyên, không làm gì
         if (prevMusic != null && prevMusic.equals(currMusic)) {
             previousState = currentState;
             return;
         }
 
-        // Dừng nhạc cũ (nếu có)
         if (prevMusic != null) {
             sound.stopAndRemoveLoop(prevMusic);
         }
 
-        // Phát nhạc mới (nếu có)
         if (currMusic != null) {
-            // Nếu đang PLAYING mà game over/won thì không phát lại background
             if (currentState == GameState.PLAYING && (model.isGameOver() || model.isGameWon())) {
-                // Không phát
             } else {
                 sound.loopSound(currMusic);
             }
@@ -332,12 +319,10 @@ public class GameController implements Runnable {
         previousState = currentState;
     }
 
-    // Phương thức công khai được gọi từ InputHandler để xử lý click chuột
     public void handleMousePress(int mx, int my) {
         GameState state = model.getCurrentState();
 
         if (state == GameState.LOGIN) {
-            // Check fields click
             if (my >= 304 && my <= 331 && mx >= 225 && mx <= 407) model.setActiveField(0);
             else if (my >= 366 && my <= 393 && mx >= 225 && mx <= 407) model.setActiveField(1);
 
@@ -446,14 +431,12 @@ public class GameController implements Runnable {
                 btn.setHovered(btn.contains(mx, my));
             }
         }
-        // Xử lý riêng cho controls (button đơn)
         if (state == GameState.CONTROLS) {
             MenuButton btn = model.getControlsButtons();
             btn.setHovered(btn.contains(mx, my));
         }
     }
 
-    // Lấy danh sách buttons theo trạng thái hiện tại
     private java.util.List<MenuButton> getButtonsForState(GameState state) {
         switch (state) {
             case LEVEL_LOCKED_POPUP: return model.getLevelLockedButtons();
@@ -570,7 +553,6 @@ public class GameController implements Runnable {
         GameState state = model.getCurrentState();
         if (state != GameState.LOGIN && state != GameState.REGISTER) return;
 
-        // Chỉ nhận chữ cái, số, hoặc vài ký tự cơ bản
         if (Character.isLetterOrDigit(c) || c == '_' || c == '-' || c == '@' || c == '.') {
             if (state == GameState.LOGIN) {
                 if (model.getActiveField() == 0 && model.getLoginUsername().length() < 20) {
@@ -687,7 +669,6 @@ public class GameController implements Runnable {
             case "TOGGLE_PASSWORD":
                 boolean newShowState = !model.isShowPassword();
                 model.setShowPassword(newShowState);
-                // Cập nhật icon cho nút toggle trên cả Login và Register
                 java.awt.image.BufferedImage eyeIcon = utils.AssetManager.getInstance()
                         .getImage(newShowState ? "viewPassword" : "hidePassword");
                 for (MenuButton btn : model.getLoginButtons()) {
